@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rainfall by Districts — Tamil Nadu · SHB 2020</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  @page {
+    size: A4;
+    margin: 0;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+    background: #fff;
+    color: #1a1a1a;
+    width: 210mm;
+    margin: 0 auto;
+  }
+
+  /* ── Hero ── */
+  .hero {
+    background: #042C53;
+    color: #fff;
+    padding: 40px 48px 36px;
+    position: relative;
+    overflow: hidden;
+    page-break-after: avoid;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -80px; right: -80px;
+    width: 340px; height: 340px;
+    border-radius: 50%;
+    background: rgba(55,138,221,0.1);
+    pointer-events: none;
+  }
+  .hero::after {
+    content: '';
+    position: absolute;
+    bottom: -100px; left: 20px;
+    width: 220px; height: 220px;
+    border-radius: 50%;
+    background: rgba(55,138,221,0.07);
+    pointer-events: none;
+  }
+  .hero-eyebrow {
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #85B7EB;
+    margin-bottom: 14px;
+  }
+  .hero-title {
+    font-size: 44px;
+    font-weight: 500;
+    line-height: 1.1;
+    color: #fff;
+    margin-bottom: 10px;
+  }
+  .hero-title span { color: #85B7EB; }
+  .hero-desc {
+    font-size: 12px;
+    color: rgba(255,255,255,0.5);
+    margin-bottom: 36px;
+    max-width: 400px;
+    line-height: 1.7;
+  }
+  .hero-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    border-top: 0.5px solid rgba(255,255,255,0.12);
+    padding-top: 24px;
+  }
+  .hero-stat { padding-right: 24px; }
+  .hero-stat + .hero-stat { border-left: 0.5px solid rgba(255,255,255,0.12); padding-left: 24px; }
+  .hs-label { font-size: 9px; color: rgba(255,255,255,0.4); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 5px; }
+  .hs-num { font-size: 28px; font-weight: 500; color: #fff; line-height: 1; margin-bottom: 4px; }
+  .hs-num span { font-size: 14px; font-weight: 400; color: rgba(255,255,255,0.45); }
+  .hs-note { font-size: 11px; color: #85B7EB; }
+
+  /* ── Sections ── */
+  .sec { padding: 28px 48px 0; }
+  .sec-eyebrow { font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: #888; margin-bottom: 5px; }
+  .sec-title { font-size: 18px; font-weight: 500; color: #1a1a1a; margin-bottom: 4px; }
+  .sec-sub { font-size: 11px; color: #888; line-height: 1.6; margin-bottom: 16px; }
+  .divider { height: 0.5px; background: #e8e8e8; margin: 0 48px; }
+
+  /* ── Total chart ── */
+  .chart-wrap { padding: 0 48px 24px; }
+  .chart-card { background: #f7f8fa; border-radius: 12px; padding: 20px; }
+  .chart-card-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
+  .cct { font-size: 12px; font-weight: 500; color: #1a1a1a; margin-bottom: 2px; }
+  .ccs { font-size: 10px; color: #888; }
+  .legend { display: flex; gap: 14px; align-items: center; }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 10px; color: #888; }
+  .legend-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+
+  /* ── Season band ── */
+  .season-band { background: #042C53; padding: 28px 48px 32px; margin-top: 24px; }
+  .season-band-title { font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: #85B7EB; margin-bottom: 20px; }
+  .season-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .season-card { background: rgba(255,255,255,0.04); border: 0.5px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 16px 18px; }
+  .sc-title { font-size: 12px; font-weight: 500; color: #fff; margin-bottom: 3px; }
+  .sc-sub { font-size: 10px; color: rgba(255,255,255,0.35); margin-bottom: 14px; letter-spacing: 0.04em; }
+
+  /* ── Highlights ── */
+  .hl-band { padding: 28px 48px 24px; }
+  .hl-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .hl-card { border: 0.5px solid #e2e8f0; border-radius: 12px; padding: 16px; position: relative; overflow: hidden; }
+  .hl-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: #185FA5; }
+  .hl-season { font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: #888; margin-bottom: 10px; }
+  .hl-num { font-size: 24px; font-weight: 500; color: #185FA5; line-height: 1; margin-bottom: 4px; }
+  .hl-num span { font-size: 12px; font-weight: 400; color: #888; }
+  .hl-district { font-size: 12px; font-weight: 500; color: #1a1a1a; margin-bottom: 4px; }
+  .hl-note { font-size: 10px; color: #888; line-height: 1.5; }
+
+  /* ── Footer ── */
+  .rr-footer { background: #042C53; padding: 16px 48px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; }
+  .rr-footer p { font-size: 9px; color: rgba(255,255,255,0.3); letter-spacing: 0.06em; }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <p class="hero-eyebrow">Statistical Handbook of India · SHB 2020</p>
+  <h1 class="hero-title">Rainfall<br>across<br><span>Tamil Nadu</span></h1>
+  <p class="hero-desc">District-level rainfall across four seasons — SW monsoon, NE monsoon, winter, and hot weather. June 2018 through May 2019.</p>
+  <div class="hero-stats">
+    <div class="hero-stat">
+      <p class="hs-label">Highest</p>
+      <p class="hs-num">1,517<span> mm</span></p>
+      <p class="hs-note">The Nilgiris</p>
+    </div>
+    <div class="hero-stat">
+      <p class="hs-label">Lowest</p>
+      <p class="hs-num">351<span> mm</span></p>
+      <p class="hs-note">Karur</p>
+    </div>
+    <div class="hero-stat">
+      <p class="hs-label">State average</p>
+      <p class="hs-num">699<span> mm</span></p>
+      <p class="hs-note">vs 960 mm normal</p>
+    </div>
+    <div class="hero-stat">
+      <p class="hs-label">Districts</p>
+      <p class="hs-num">32</p>
+      <p class="hs-note">across Tamil Nadu</p>
+    </div>
+  </div>
+</div>
+
+<div class="sec">
+  <p class="sec-eyebrow">Annual overview</p>
+  <p class="sec-title">Total actual rainfall</p>
+  <p class="sec-sub">All seasons combined · Top 5 and bottom 5 districts</p>
+</div>
+<div class="chart-wrap">
+  <div class="chart-card">
+    <div class="chart-card-head">
+      <div>
+        <p class="cct">June 2018 – May 2019</p>
+        <p class="ccs">32 districts · sorted highest to lowest</p>
+      </div>
+      <div class="legend">
+        <div class="legend-item"><span class="legend-dot" style="background:#042C53;"></span>Top 5</div>
+        <div class="legend-item"><span class="legend-dot" style="background:#B5D4F4;"></span>Bottom 5</div>
+      </div>
+    </div>
+    <div style="position:relative;width:100%;height:420px;">
+      <canvas id="c-total"></canvas>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<div class="season-band">
+  <p class="season-band-title">Seasonal breakdown — top 5 &amp; bottom 5 per season</p>
+  <div class="season-grid">
+    <div class="season-card">
+      <p class="sc-title">SW monsoon</p>
+      <p class="sc-sub">June – September 2018</p>
+      <div style="position:relative;width:100%;height:390px;">
+        <canvas id="c-sw"></canvas>
+      </div>
+    </div>
+    <div class="season-card">
+      <p class="sc-title">NE monsoon</p>
+      <p class="sc-sub">October – December 2018</p>
+      <div style="position:relative;width:100%;height:390px;">
+        <canvas id="c-ne"></canvas>
+      </div>
+    </div>
+    <div class="season-card">
+      <p class="sc-title">Winter season</p>
+      <p class="sc-sub">January – February 2019</p>
+      <div style="position:relative;width:100%;height:390px;">
+        <canvas id="c-win"></canvas>
+      </div>
+    </div>
+    <div class="season-card">
+      <p class="sc-title">Hot weather season</p>
+      <p class="sc-sub">March – May 2019</p>
+      <div style="position:relative;width:100%;height:390px;">
+        <canvas id="c-hot"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="hl-band">
+  <div style="margin-bottom:16px;">
+    <p class="sec-eyebrow">Season leaders</p>
+    <p class="sec-title" style="margin-bottom:0;">District standouts by season</p>
+  </div>
+  <div class="hl-grid">
+    <div class="hl-card">
+      <p class="hl-season">SW monsoon</p>
+      <p class="hl-num">876.9<span> mm</span></p>
+      <p class="hl-district">The Nilgiris</p>
+      <p class="hl-note">Western Ghats orographic lift drives outsized rainfall</p>
+    </div>
+    <div class="hl-card">
+      <p class="hl-season">NE monsoon</p>
+      <p class="hl-num">816.6<span> mm</span></p>
+      <p class="hl-district">Nagapattinam</p>
+      <p class="hl-note">Coastal exposure to Bay of Bengal cyclones</p>
+    </div>
+    <div class="hl-card">
+      <p class="hl-season">Winter season</p>
+      <p class="hl-num">23.0<span> mm</span></p>
+      <p class="hl-district">Tirunelveli</p>
+      <p class="hl-note">Highest district in Tamil Nadu's driest season</p>
+    </div>
+    <div class="hl-card">
+      <p class="hl-season">Hot weather</p>
+      <p class="hl-num">213.2<span> mm</span></p>
+      <p class="hl-district">The Nilgiris</p>
+      <p class="hl-note">Pre-monsoon convective showers over the hills</p>
+    </div>
+  </div>
+</div>
+
+<div class="rr-footer">
+  <p>Source · data.gov.in · Rainfall by Districts, SHB 2020 · Government of India</p>
+  <p>Darker blue = higher rainfall within each chart</p>
+</div>
+
+<script>
+const data = [
+  {d:'Chennai',        sw:395.3, ne:352.9, win:1.6,  hot:0,     total:749.8,  normal:1324.2},
+  {d:'Kancheepuram',   sw:397,   ne:417.1, win:0.5,  hot:8.4,   total:823,    normal:1227.7},
+  {d:'Tiruvallur',     sw:364.3, ne:343.2, win:0.5,  hot:9.5,   total:717.5,  normal:1139.6},
+  {d:'Cuddalore',      sw:274.6, ne:621,   win:2.2,  hot:5.6,   total:903.4,  normal:1206.7},
+  {d:'Villupuram',     sw:257.1, ne:435.9, win:0,    hot:22.5,  total:715.5,  normal:1011.6},
+  {d:'Vellore',        sw:318.1, ne:181.5, win:2.5,  hot:35.7,  total:537.8,  normal:936.2},
+  {d:'Tiruvannamalai', sw:309.7, ne:393.1, win:0.8,  hot:44.3,  total:747.9,  normal:1040},
+  {d:'Salem',          sw:330.6, ne:187.6, win:6,    hot:114.4, total:638.6,  normal:997.9},
+  {d:'Namakkal',       sw:256.7, ne:182.6, win:5.8,  hot:78.1,  total:523.2,  normal:793.4},
+  {d:'Dharmapuri',     sw:170.6, ne:133.7, win:9.2,  hot:121.7, total:435.2,  normal:902.1},
+  {d:'Krishnagiri',    sw:222.2, ne:123.2, win:14.4, hot:148.2, total:508,    normal:850.7},
+  {d:'Tiruppur',       sw:165.6, ne:282,   win:2.8,  hot:26.8,  total:477.2,  normal:618.2},
+  {d:'Coimbatore',     sw:652.3, ne:325.1, win:2.3,  hot:61.8,  total:1041.5, normal:689.3},
+  {d:'Erode',          sw:282.9, ne:227.9, win:1.8,  hot:76.5,  total:589.1,  normal:702.9},
+  {d:'Tiruchirappalli',sw:143.2, ne:208.1, win:0,    hot:31.8,  total:383.1,  normal:818},
+  {d:'Karur',          sw:164.4, ne:147.4, win:0,    hot:38.7,  total:350.5,  normal:655},
+  {d:'Perambalur',     sw:180,   ne:250.1, win:0,    hot:55.8,  total:485.9,  normal:861.9},
+  {d:'Pudukkottai',    sw:277.7, ne:313.2, win:0,    hot:10.1,  total:601,    normal:887.4},
+  {d:'Thanjavur',      sw:151,   ne:471.5, win:3,    hot:6.6,   total:632.1,  normal:1013.1},
+  {d:'Tiruvarur',      sw:181.7, ne:710.6, win:0.6,  hot:6.9,   total:899.8,  normal:1173.3},
+  {d:'Nagapattinam',   sw:164.8, ne:816.6, win:2.6,  hot:0.6,   total:984.6,  normal:1393.3},
+  {d:'Madurai',        sw:273.8, ne:278.4, win:5.4,  hot:54.9,  total:612.5,  normal:927.9},
+  {d:'Theni',          sw:474,   ne:302.1, win:11.3, hot:115.1, total:902.5,  normal:720},
+  {d:'Dindigul',       sw:267,   ne:301.8, win:5.7,  hot:61.4,  total:635.9,  normal:930.7},
+  {d:'Ramanathapuram', sw:96.5,  ne:440.3, win:1,    hot:8.4,   total:546.2,  normal:807.9},
+  {d:'Virudhunagar',   sw:227.4, ne:265.4, win:11.6, hot:13.3,  total:517.7,  normal:820.1},
+  {d:'Sivaganga',      sw:305.7, ne:338,   win:3.1,  hot:17.2,  total:664,    normal:872.8},
+  {d:'Tirunelveli',    sw:344.5, ne:519.8, win:23,   hot:81.6,  total:968.9,  normal:845.1},
+  {d:'Thoothukkudi',   sw:57.9,  ne:348.8, win:5.6,  hot:13.1,  total:425.4,  normal:656.3},
+  {d:'The Nilgiris',   sw:876.9, ne:416.3, win:10.3, hot:213.2, total:1516.7, normal:1522.7},
+  {d:'Ariyalur',       sw:218.4, ne:518.3, win:0,    hot:0.1,   total:736.8,  normal:1071.8},
+  {d:'Kanniyakumari',  sw:579.8, ne:402.8, win:12.6, hot:94.4,  total:1089.6, normal:1302.5},
+];
+
+const topColors    = ['#042C53','#0C447C','#185FA5','#378ADD','#5BA3E8'];
+const bottomColors = ['#85B7EB','#A4C9F0','#B5D4F4','#C8DFF7','#DCEcF8'];
+
+function makeChart(id, key, dark) {
+  const sorted = [...data].sort((a,b) => b[key] - a[key]);
+  const top5   = sorted.slice(0,5);
+  const bot5   = sorted.slice(-5).reverse();
+  const rows   = [...top5, null, ...bot5];
+  const vals   = rows.map(r => r ? parseFloat(r[key].toFixed(1)) : null);
+  const colors = [...topColors, 'rgba(0,0,0,0)', ...bottomColors];
+
+  const axisColor = dark ? 'rgba(255,255,255,0.35)' : '#999';
+  const gridColor = dark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)';
+
+  new Chart(document.getElementById(id), {
+    type: 'bar',
+    data: {
+      labels: rows.map(r => r ? r.d : ''),
+      datasets: [{
+        data: vals,
+        backgroundColor: colors,
+        borderRadius: 3,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      animation: false,
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { enabled: false } },
+      scales: {
+        x: {
+          beginAtZero: true,
+          grid: { color: gridColor },
+          ticks: { color: axisColor, font:{size:9}, callback: v => v+' mm' }
+        },
+        y: {
+          grid: { display: false },
+          ticks: {
+            autoSkip: false,
+            font: { size: 9.5 },
+            color(ctx) {
+              if (ctx.index < 5)   return dark ? '#B5D4F4' : '#042C53';
+              if (ctx.index === 5) return 'transparent';
+              return dark ? 'rgba(255,255,255,0.4)' : '#888';
+            }
+          }
+        }
+      },
+      layout: { padding: { right: 4 } }
+    },
+    plugins: [{
+      id: 'gap',
+      afterDraw(chart) {
+        const {ctx, scales:{x,y}} = chart;
+        const yPos = y.getPixelForValue(5);
+        ctx.save();
+        ctx.setLineDash([3,4]);
+        ctx.strokeStyle = dark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.12)';
+        ctx.lineWidth = 0.8;
+        ctx.beginPath();
+        ctx.moveTo(x.left, yPos);
+        ctx.lineTo(x.right, yPos);
+        ctx.stroke();
+        ctx.restore();
+        ctx.save();
+        ctx.font = '8px -apple-system, sans-serif';
+        ctx.fillStyle = dark ? 'rgba(255,255,255,0.22)' : 'rgba(0,0,0,0.22)';
+        ctx.textAlign = 'right';
+        ctx.fillText('top 5 ↑', x.right, yPos - 3);
+        ctx.fillText('↓ bottom 5', x.right, yPos + 10);
+        ctx.restore();
+      }
+    }]
+  });
+}
+
+makeChart('c-total', 'total', false);
+makeChart('c-sw',    'sw',    true);
+makeChart('c-ne',    'ne',    true);
+makeChart('c-win',   'win',   true);
+makeChart('c-hot',   'hot',   true);
+</script>
+</body>
+</html>
